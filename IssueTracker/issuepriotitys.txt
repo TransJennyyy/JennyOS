@@ -1,0 +1,1 @@
+Low,high,low,low,highist,high,low,highist,lowist,high,low,high,
