@@ -48,7 +48,7 @@ void CommandLoop()
     asm("int $0x80" :: "S"(0), "ebx"(Tmp));
     asm("int $0x80" :: "S"(0), "ebx"(InputBuffer));
     unsigned int Output;
-    asm("int $0x80" : "=ebx"(Output): "S"(0x10), "ebx"(InputBuffer)); // freeze the thread until later
+    asm("int $0x80" : "=ebx"(Output): "S"(0x11), "ebx"(InputBuffer)); // freeze the thread until later
 
     if(Output == 0){ return;}
     //Console::PrintString("Got Output:");

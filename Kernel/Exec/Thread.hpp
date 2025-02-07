@@ -18,8 +18,11 @@ struct ThreadObject
     
     unsigned int ThreadWaitTime; // this is the number of LAPIC ints untill it unpauses( to never happen leave as zero)
 
-    unsigned int ThreadState; // 0 for normal
-
+    unsigned int ThreadState; 
+    // 0 for normal
+    // 1 for paused
+    // 2 for closed
+    // 3 for waiting
     unsigned int ThreadParentIndex;
 };
 

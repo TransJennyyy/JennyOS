@@ -623,15 +623,28 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
     }
 
 
+    if(CoreCurrentThreadID != 0 && ThreadArray != 0 && NumberThreads != 0 /*&& ISR == 0x32*/)
+    {
+        Spinlock::WaitSet(&Thread::SpinLock);
+        ThreadObject TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
+        if(!TmpObj.FirstStart && TmpObj.CoreUsing == CoreIndex)
+        {
+            if(TmpObj.ThreadState == 0){
+                ThreadArray[CoreCurrentThreadID[CoreIndex]].StackPTR = ISRStartingStack;
+            }
+            
+        }
+        Thread::SpinLock = 0;
+    }
     if(ISR == 0x80 && (ThreadArray != 0))
     {
         Spinlock::WaitSet(&SyscallSpinLock);
         unsigned int* Registors = (unsigned int*)(ISRStartingStack+4);
         
-        /*Console::PrintString("Got Syscall:");
-        Console::PrintInt(Registors[0], 0);
-        Console::PrintString("\n");
-*/
+        //Console::PrintString("Got Syscall:");
+        //Console::PrintInt(Registors[0], 0);
+        //Console::PrintString("\n");
+
         if(Registors[0] < 0xFFFF ) // theres only 0xFFFF entrys
         {
             if(SysCalls::SysCallList[Registors[0]] != 0)
@@ -682,7 +695,7 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
                 Console::PrintInt(i, 0);
                 Console::PrintString("]:");
                 Console::PrintInt(CorePrintInfo[i], 0);
-                Console::PrintString("\n");
+                Console::PrintString("\n"); // good for debuging, not for use
                 */
                 NumberIntsPerCore[i]=AvgCoreSpeed[i];
                 AvgCoreSpeed[i] = 0; 
@@ -701,17 +714,13 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
     if(CoreCurrentThreadID != 0 && ThreadArray != 0 && NumberThreads != 0 /*&& ISR == 0x32*/)
     {
         Spinlock::WaitSet(&Thread::SpinLock);
-        ThreadObject TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
-        if(!TmpObj.FirstStart && TmpObj.CoreUsing == CoreIndex && TmpObj.ThreadState != 2)
-        {
-            ThreadArray[CoreCurrentThreadID[CoreIndex]].StackPTR = ISRStartingStack;
-            if(ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState != 0)
-            {
-                Console::PrintString("Current Core is Pausing:");
-                Console::PrintInt(CoreIndex, 0);
-                Console::PrintString("\n");
-            }
-        }
+        
+        
+        
+        
+        
+        
+      
 
         unsigned int ThreadIndex = 0;
         while(1){
@@ -730,8 +739,21 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
             if(ThreadIndex >= (NumberThreads)){break;}
         }
 
-        TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
-
+        ThreadObject TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
+        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.ThreadState == 4))
+        {
+            
+            Console::PrintString("Thread Restarting\n");
+            Apic::WriteLAPICReg(0xb0, 0);
+            Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
+            Apic::WriteLAPICReg(0x3E0, 0x3);
+            Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
+            Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
+            ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState = 0;
+            Thread::SpinLock = 0;
+            ReStartThread(TmpObj.StackPTR);
+            
+        }
         if(TmpObj.CoreUsing == CoreIndex && (TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
         {
             // run the StartThread
@@ -751,7 +773,7 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
         if((TmpObj.CoreUsing == CoreIndex) && (!TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
         {
             // RestartThread func
-            //(*((char*)(0xb8000+200+(CoreCurrentThreadID[CoreIndex]*2))))++;
+           // (*((char*)(0xb8000+200+(CoreCurrentThreadID[CoreIndex]*2))))++;
             Apic::WriteLAPICReg(0xb0, 0);
             Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
             Apic::WriteLAPICReg(0x3E0, 0x3);

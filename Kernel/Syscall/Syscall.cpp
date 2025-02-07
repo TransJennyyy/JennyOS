@@ -109,7 +109,7 @@ void LoadAppNonBG(unsigned int* Registors, void* ThreadObjPtr)
     Registors[3] = NewThreadIndex;
 
     ThreadArray[NewThreadIndex].ThreadParentIndex = CoreCurrentThreadID[ThreadOBJ->CoreUsing];
-    ThreadArray[CoreCurrentThreadID[ThreadOBJ->CoreUsing]].ThreadState = 1;
+    ThreadArray[CoreCurrentThreadID[ThreadOBJ->CoreUsing]].ThreadState = 3;
 
     Thread::SpinLock = 0;
 
@@ -145,9 +145,16 @@ void Exit(unsigned int* Registors, void* ThreadObjPtr)
 {
     struct ThreadObject* AppThread = (struct ThreadObject*)ThreadObjPtr;
     Spinlock::WaitSet(&Thread::SpinLock);
+    
+    unsigned int IndexSetting = AppThread->ThreadParentIndex;
 
     AppThread->ThreadState = 2; // closed
-
+    if(ThreadArray[AppThread->ThreadParentIndex].ThreadState == 3)
+    {
+        Console::PrintString("Unpauing thread:");
+        Console::PrintInt(IndexSetting, 0);
+        ThreadArray[IndexSetting].ThreadState = 4;
+    }
 
 
     AppThread->StackPTR -= 0x1000;
@@ -156,7 +163,7 @@ void Exit(unsigned int* Registors, void* ThreadObjPtr)
     AppThread->StackPTR = 0;
     Kmalloc::Free(AppThread->AppStart);
     Thread::SpinLock = 0;
-    //Console::PrintString("Thread Close Request\n");
+    Console::PrintString("\nThread Close Request\n");
 }
 
 void HasThreadClosed(unsigned int* Reg, void* ThreadObjPtr){
@@ -176,7 +183,7 @@ void SysCalls::Init()
     SysCallList[0] = PrintSyscall;
     SysCallList[0x08] = ClearScreen;
     SysCallList[0x10] = LoadApp;
-    //SysCallList[0x11] = LoadAppNonBG;
+    SysCallList[0x11] = LoadAppNonBG;
     SysCallList[0x12] = HasThreadClosed;
     SysCallList[0x30] = Exit;
     //SysCallList[0x20] = GetInput;
