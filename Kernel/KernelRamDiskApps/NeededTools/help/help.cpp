@@ -1,6 +1,6 @@
 #include "help.hpp"
 
-const char* HelpString = "Welcome To Jenny's OS( An os made in 20 DAYS )\nCommandList\nhelp - this command | tl - list info about all open threads\n";
+const char* HelpString = "Welcome To Jenny's OS\n\nhelp - this command | tl - list info about all open threads\n";
 
 void Help::Entry()
 {

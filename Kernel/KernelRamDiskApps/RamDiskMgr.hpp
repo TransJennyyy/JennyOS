@@ -1,7 +1,7 @@
 
 class RamDiskMgr
 {
-    #define NumberOverides 5
+    #define NumberOverides 4
     public:
     static char* OverrideArray;
     static void* OverrideAddr[NumberOverides];
