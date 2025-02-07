@@ -67,7 +67,7 @@ void CommandLine::CommandLineEntry()
     //Console::PrintString("Started Thread\n");
     asm("int $0x80" :: "S"(0x08));
 
-    char* PrintString = "\nWelcome to Jenny OS(v0.0.0)\nJenny OS comes with ZERO WARRANTY for ANY use(GPL-3).\nJenny OS is a hobby OS.\nif you find any bugs please email me at transjennyyyyy@gmail.com Run contribute for more info\n";
+    const char* PrintString = "\nWelcome to Jenny OS(v0.0.0)\nJenny OS comes with ZERO WARRANTY for ANY use(GPL-3).\nJenny OS is a hobby OS.\nIf you find any bugs please email me at transjennyyyyy@gmail.com Run contri for more info\n";
     asm("int $0x80" :: "S"(0), "ebx"(PrintString));
     unsigned int NumberAppsRan  = 0;
     
