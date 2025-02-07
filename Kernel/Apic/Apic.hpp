@@ -125,4 +125,8 @@ class Apic
     static void StartLApicTimer(unsigned int NumberTimesPerMS);
 };
 
-
+extern unsigned int NumberCores;
+extern unsigned char* CoreIDS;
+extern char** CoreStackPtrs; 
+extern unsigned int* CoreCurrentThreadID;
+extern char* CoreStateList;

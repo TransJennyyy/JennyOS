@@ -277,7 +277,7 @@ extern "C" void IDTENTRY254();
 extern "C" void IDTENTRY255();
 unsigned int* AvgCoreSpeed;
 unsigned int* NumberIntsPerCore;
-extern char* CoreStateList;
+
 
 
 typedef void (*IDTFuncEntry)();
@@ -439,32 +439,32 @@ void GPHandler(unsigned int ISR)
     asm("hlt");
 
 }
-extern "C" void StartThread(unsigned int AppPtr,unsigned int StackPtr);
-extern "C" void ReStartThread(unsigned int StackPtr);
+
+
 IDTEntryType IDT::CpuIntStormHandler;
-extern unsigned int NumberCores;
-extern unsigned char* CoreIDS;
+
+
 unsigned char LastRecordedSecond = 0;
 unsigned int* CorePrintInfo;
-extern char** CoreStackPtrs; 
-extern unsigned int* CoreCurrentThreadID;
+
+
 
 IDTFuncEntry IDT::CpuUnderFlowHandler;
  
-void MoveToStartStack(unsigned int CoreIndex)
-{
-    /*Console::PrintString("Core Index:");
-    Console::PrintInt(CoreIndex, 0);
-    Console::PrintString("\n");*/
-    CoreStateList[CoreIndex] = 4; // make sure the ISR stack resets
-    Apic::WriteLAPICReg(0xb0, 0);
-    Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
-    Apic::WriteLAPICReg(0x3E0, 0x3);
-    Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
-    Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
-    ReStartThread((unsigned int)CoreStackPtrs[CoreIndex]);
-    while(1);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -711,91 +711,8 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
         CorePrintInfo[CoreIndex]++;
     }
     
-    if(CoreCurrentThreadID != 0 && ThreadArray != 0 && NumberThreads != 0 /*&& ISR == 0x32*/)
-    {
-        Spinlock::WaitSet(&Thread::SpinLock);
-        
-        
-        
-        
-        
-        
-      
 
-        unsigned int ThreadIndex = 0;
-        while(1){
-            CoreCurrentThreadID[CoreIndex]++;
-            if(CoreCurrentThreadID[CoreIndex] > (NumberThreads-1))
-            {
-                CoreCurrentThreadID[CoreIndex] = 0;
-            }
-            if(ThreadArray[CoreCurrentThreadID[CoreIndex]].CoreUsing == CoreIndex)
-            {
-                 
-                //if(ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState == 0){ (*((char*)0xb8000+300+(CoreIndex*2)))++;}
-                break;
-            }
-            ThreadIndex++;
-            if(ThreadIndex >= (NumberThreads)){break;}
-        }
-
-        ThreadObject TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
-        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.ThreadState == 4))
-        {
-            
-            Console::PrintString("Thread Restarting\n");
-            Apic::WriteLAPICReg(0xb0, 0);
-            Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
-            Apic::WriteLAPICReg(0x3E0, 0x3);
-            Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
-            Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
-            ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState = 0;
-            Thread::SpinLock = 0;
-            ReStartThread(TmpObj.StackPTR);
-            
-        }
-        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
-        {
-            // run the StartThread
-            // func
-            Console::PrintString("Starting Func\n");
-            ThreadArray[CoreCurrentThreadID[CoreIndex]].FirstStart = 0;
-            Apic::WriteLAPICReg(0xb0, 0);
-            Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
-            Apic::WriteLAPICReg(0x3E0, 0x3);
-            Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
-            Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
-            Thread::SpinLock = 0;
-            StartThread((unsigned int)TmpObj.AppStart, TmpObj.StackPTR);
-            
-            while(1);
-        }
-        if((TmpObj.CoreUsing == CoreIndex) && (!TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
-        {
-            // RestartThread func
-           // (*((char*)(0xb8000+200+(CoreCurrentThreadID[CoreIndex]*2))))++;
-            Apic::WriteLAPICReg(0xb0, 0);
-            Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
-            Apic::WriteLAPICReg(0x3E0, 0x3);
-            Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
-            Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
-            Thread::SpinLock = 0;
-            ReStartThread(TmpObj.StackPTR);
-            while(1);
-        }
-
-        if(TmpObj.CoreUsing != CoreIndex || TmpObj.ThreadState != 0)
-        {
-            Thread::SpinLock = 0;
-            MoveToStartStack(((unsigned int)CoreIndex));
-        }
-
-        
-            
-        
-    }
-
-    
+    Thread::SwitchTask(CoreIndex, ISRStartingStack);    
     
     
     

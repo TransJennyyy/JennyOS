@@ -6,6 +6,8 @@ In order of what needs to be done
 - FS allows you to make a file at the same path with the same name
 - If you open the command line from within the command line a crash may happen when using that command line
 # Wants
+- Switch the VFS(virtal file system) from buteforce scan to hashmap
+- Store less unused syscalls in memory
 - Fix the IOAPIC driver
 - Better thread error handling
 - Fix and Enable Paging

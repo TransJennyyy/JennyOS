@@ -32,7 +32,7 @@ class Thread
     static unsigned int SpinLock;
     static unsigned int InitThread(void* AppStart, unsigned int Priority, unsigned char IsBGTask);
 
-
+    static void SwitchTask(unsigned int CoreIndex, unsigned int ISRStartingStack);
     void RunThread();
 };
 
