@@ -12,11 +12,6 @@ struct ThreadObject* ThreadArray;
 extern unsigned int NumberCores;
 extern unsigned char* CoreIDS;
 
-extern unsigned int StartingThread;
-extern unsigned char StartedThread;
-
-unsigned char CreatingNewThread;
-
 unsigned int Thread::SpinLock;
 
 unsigned int Thread::InitThread(void* AppStart, unsigned int Priority, unsigned char IsBGTask)
@@ -84,13 +79,10 @@ unsigned int Thread::InitThread(void* AppStart, unsigned int Priority, unsigned 
         ThreadArray[OpenIndex].FirstStart =1;
         ThreadArray[OpenIndex].Priority = Priority;
         ThreadArray[OpenIndex].ThreadCloseMsg = 0;
-        ThreadArray[OpenIndex].ThreadPaused = 0;
         ThreadArray[OpenIndex].ThreadWaitTime = 0;
         ThreadArray[OpenIndex].NumberSyscallsPerSecond = 0;
-        ThreadArray[OpenIndex].BgTask = IsBGTask;
         ThreadArray[OpenIndex].ThreadState = 0;
         ThreadArray[OpenIndex].ThreadParentIndex = 0;
-        CreatingNewThread = 0;
         SpinLock = 0;
         return OpenIndex;
     }
@@ -118,10 +110,8 @@ unsigned int Thread::InitThread(void* AppStart, unsigned int Priority, unsigned 
     TmpArray[NumberThreads].Priority = Priority; 
     TmpArray[NumberThreads].StackPTR = (unsigned int) Kmalloc::Malloc(0x1000);
     TmpArray[NumberThreads].FirstStart =1;
-    TmpArray[NumberThreads].ThreadPaused = 0;
     TmpArray[NumberThreads].ThreadWaitTime = 0;
     TmpArray[NumberThreads].ThreadCloseMsg = (void*)0;
-    TmpArray[NumberThreads].BgTask = IsBGTask;
     TmpArray[NumberThreads].ThreadParentIndex = 0;
     TmpArray[NumberThreads].ThreadState = 0;
     if(TmpArray[NumberThreads].StackPTR == 0)
@@ -150,7 +140,6 @@ unsigned int Thread::InitThread(void* AppStart, unsigned int Priority, unsigned 
     ThreadArray = TmpArray;
     //FirstStartThread = FirstStartThreadTmp;
     
-    CreatingNewThread = 0;
 
     
 
@@ -189,13 +178,6 @@ void Thread::SwitchTask(unsigned int CoreIndex, unsigned int ISRStartingStack)
     if(CoreCurrentThreadID != 0 && ThreadArray != 0 && NumberThreads != 0 /*&& ISR == 0x32*/)
     {
         Spinlock::WaitSet(&Thread::SpinLock);
-        
-        
-        
-        
-        
-        
-      
 
         unsigned int ThreadIndex = 0;
         while(1){
@@ -215,25 +197,25 @@ void Thread::SwitchTask(unsigned int CoreIndex, unsigned int ISRStartingStack)
         }
 
         ThreadObject TmpObj = ThreadArray[CoreCurrentThreadID[CoreIndex]];
-        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.ThreadState == 4))
+        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.ThreadState == ThreadStateRestarting))
         {
             
-            Console::PrintString("Thread Restarting\n");
+            //Console::PrintString("Thread Restarting\n");
             Apic::WriteLAPICReg(0xb0, 0);
             Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
             Apic::WriteLAPICReg(0x3E0, 0x3);
             Apic::WriteLAPICReg(0x380,(Apic::ReadLAPICReg(0x380)));
             Apic::WriteLAPICReg(0xf0, 0x100); // reset the core timer
-            ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState = 0;
+            ThreadArray[CoreCurrentThreadID[CoreIndex]].ThreadState = ThreadStateNormal;
             Thread::SpinLock = 0;
             ReStartThread(TmpObj.StackPTR);
             
         }
-        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
+        if(TmpObj.CoreUsing == CoreIndex && (TmpObj.FirstStart) && (TmpObj.ThreadState == ThreadStateNormal))
         {
             // run the StartThread
             // func
-            Console::PrintString("Starting Func\n");
+            //Console::PrintString("Starting Func\n");
             ThreadArray[CoreCurrentThreadID[CoreIndex]].FirstStart = 0;
             Apic::WriteLAPICReg(0xb0, 0);
             Apic::WriteLAPICReg(0x320, (0x32 | (1 << 17) ));
@@ -245,7 +227,7 @@ void Thread::SwitchTask(unsigned int CoreIndex, unsigned int ISRStartingStack)
             
             while(1);
         }
-        if((TmpObj.CoreUsing == CoreIndex) && (!TmpObj.FirstStart) && (TmpObj.ThreadState == 0))
+        if((TmpObj.CoreUsing == CoreIndex) && (!TmpObj.FirstStart) && (TmpObj.ThreadState == ThreadStateNormal))
         {
             // RestartThread func
            // (*((char*)(0xb8000+200+(CoreCurrentThreadID[CoreIndex]*2))))++;
@@ -259,7 +241,7 @@ void Thread::SwitchTask(unsigned int CoreIndex, unsigned int ISRStartingStack)
             while(1);
         }
 
-        if(TmpObj.CoreUsing != CoreIndex || TmpObj.ThreadState != 0)
+        if(TmpObj.CoreUsing != CoreIndex || TmpObj.ThreadState != ThreadStateNormal)
         {
             Thread::SpinLock = 0;
             MoveToStartStack(((unsigned int)CoreIndex));

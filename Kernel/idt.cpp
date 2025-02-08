@@ -1,4 +1,6 @@
 #include "idt.hpp"
+#include "Cpuid.hpp"
+#include "Syscall/Syscall.hpp"
 #include "console/console.hpp"
 #include "malloc/malloc.hpp"
 #include "Apic/Apic.hpp"
@@ -18,7 +20,6 @@ unsigned int StartingThread;
 unsigned int Ps2SpinLock;
 
 
-void TestSystemcall(unsigned int);
 extern "C" void IDTENTRY0();
 extern "C" void IDTENTRY1();
 extern "C" void IDTENTRY2();
@@ -377,7 +378,6 @@ IDTENTRY248, IDTENTRY249, IDTENTRY250, IDTENTRY251, IDTENTRY252, IDTENTRY253, ID
 
     asm volatile("lidt (%0)" :: "a"(IdtrPTR));
 
-    SetISR(0x80, TestSystemcall, 0);
     NumberInts = 0xffff;
 
     AvgCoreSpeed = 0;
@@ -396,50 +396,8 @@ void TestSystemcall(unsigned int ISR)
     Console::PrintString("Got Syscall\n");
 
 }
-#include "Cpuid.hpp"
 extern void* StartStack;
 unsigned int EEFlagsOverwride = 0;
-void GPHandler(unsigned int ISR)
-{
-    Console::PrintString("Got GP Fault\n");
-    unsigned int EEFlags;
-    if(EEFlagsOverwride != 0)
-    {
-        EEFlags = EEFlagsOverwride;
-        EEFlagsOverwride = 0;
-    }
-    else{
-        EEFlags = ((unsigned int*)StartStack)[0];
-    }
-    unsigned int ErrorCode = ((unsigned int*)StartStack)[1];
-    Console::PrintString("EEFlags:");
-    Console::PrintInt(EEFlags, 0);
-    Console::PrintString("|Error Code:");
-    Console::PrintInt(ErrorCode, 0);
-
-    Console::PrintString("\nDumping MSR:");
-    unsigned int MsrL;
-    unsigned int MsrH;
-    GetMSR(0x1b, &MsrL, &MsrH);
-
-    Console::PrintString("\nLo:");
-    Console::PrintInt(MsrL, 1);
-    Console::PrintString("\nHi:");
-    Console::PrintInt(MsrH, 1);
-    Console::PrintString("\n");
-
-    if(MsrL & (1 << 11)){
-        Console::PrintString("Apic Enabled|");
-    }
-    if(MsrL & (1 << 10))
-    {
-        Console::PrintString("x2APIC Mode Enabled|");
-    }
-
-    asm("hlt");
-
-}
-
 
 IDTEntryType IDT::CpuIntStormHandler;
 
@@ -455,32 +413,6 @@ IDTFuncEntry IDT::CpuUnderFlowHandler;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern unsigned int NumberThreads;
-extern struct ThreadObject* ThreadArray;
-
-
-#include "Syscall/Syscall.hpp"
-
-extern unsigned char CreatingNewThread;
-
-unsigned int CoreStateSpinLock = 0;
-
-extern "C" void GetIdtRegistors(unsigned int Stack, unsigned int* Registors);
 
 extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
 {
@@ -555,12 +487,9 @@ extern "C" void IDThandler(unsigned int ISR, unsigned int ISRStartingStack)
     }
 
 
-    //while(CoreStateSpinLock);
-    //while(CurrentCoreRunning != CoreIndex);
 
     if(CoreStackPtrs[CoreIndex] == 0){ CoreStackPtrs[CoreIndex] = (char*)ISRStartingStack;}
     
-    //((char*)(0xb8000))[CoreIndex*2]++;
 
     if(AvgCoreSpeed[CoreIndex] >400)
     {

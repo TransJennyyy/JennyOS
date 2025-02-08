@@ -26,8 +26,8 @@ void Ps2::SetPs2InputBuffer(void* Buffer, unsigned int NumberBytes, void* Thread
     BufferDone = 0;
     BufferIndex = 0;
     ThreadGetingInput = (struct ThreadObject*) ThreadObj;
-    ThreadGetingInput->ThreadPaused = 1;
     ThreadGetingInput->ThreadWaitTime = 0; // make the thread waits until the Ps2 system unpauses it
+    ThreadGetingInput->ThreadState = ThreadStatePaused;
     IsDonePtr = 0;
 }
 
@@ -41,6 +41,7 @@ void Ps2::SetPs2InputBuffer(void* Buffer, unsigned int NumberBytes, unsigned cha
     BufferIndex = 0;
 
 }
+
 
 void Ps2::Init()
 {
@@ -78,6 +79,7 @@ void Ps2::OnPs2CheckCycle() // TODO: switch from polling to IRQ's, LOWIST priori
             ShiftDown = 0;
             break;
         case 0x1c:
+            if(CurrentBuffer == 0){ break; }
             CurrentBuffer[BufferIndex] = 0;
             BufferDone =1;
             if(Ps2ReadDone != 0)
@@ -85,12 +87,16 @@ void Ps2::OnPs2CheckCycle() // TODO: switch from polling to IRQ's, LOWIST priori
                 Ps2ReadDone();
                 Ps2ReadDone = 0;
             }
-            *IsDonePtr = 1;
-            IsDonePtr = 0;
+            if(IsDonePtr != 0){
+                *IsDonePtr = 1;
+                IsDonePtr = 0;
+            }
             BufferIndex = 0;
             CurrentBuffer = 0;
-            ThreadGetingInput->ThreadPaused = 0; // stop the pause on the thread
-
+            if(ThreadGetingInput != 0)
+            {
+                ThreadGetingInput->ThreadState = ThreadStateRestarting;
+            }
             break;
         
         default:

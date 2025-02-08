@@ -21,7 +21,6 @@ extern "C" void KernelEntry()
 #include "KernelRamDiskApps/RamDiskMgr.hpp"
 extern unsigned int NumberCores;
 extern unsigned int NumberThreads;
-extern Thread* ThreadArray;
 
 extern "C" void StartThread(unsigned int AppEntry, unsigned int AppStack);
 

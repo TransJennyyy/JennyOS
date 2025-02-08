@@ -17,7 +17,6 @@ void PrintSyscall(unsigned int* Registors, void* ThreadOBJVPtr)
     unsigned int PrintAddress = Registors[3];
     //PrintAddress += (unsigned int)ThreadOBJ->AppStart;
     Console::PrintString((char*)PrintAddress);
-    ThreadOBJ->ThreadPaused = 0;
 }
 
 extern unsigned int NumberThreads;
@@ -121,7 +120,13 @@ void LoadAppNonBG(unsigned int* Registors, void* ThreadObjPtr)
 
 void GetInput(unsigned int* Registers, void* ThreadObjPtr) // WIP
 {
-
+    struct Ps2Syscall
+    {
+        void* Buffer;
+        unsigned int BufferSize;
+    };
+    struct Ps2Syscall* InputData = (struct Ps2Syscall*)Registers[3]; 
+    Ps2::SetPs2InputBuffer(InputData->Buffer+1, InputData->BufferSize, ThreadObjPtr);
 }
 
 
@@ -130,7 +135,6 @@ void ClearScreen(unsigned int* Registors, void* ThreadPbjPtr)
 {
     Console::VGAInit();
     struct ThreadObject* AppThread = (struct ThreadObject*)ThreadPbjPtr;
-    AppThread->ThreadPaused = 0;
 }
 
 void SetExitFunc(unsigned int* Registors, void* ThreadObjPtr)
@@ -186,7 +190,7 @@ void SysCalls::Init()
     SysCallList[0x11] = LoadAppNonBG;
     SysCallList[0x12] = HasThreadClosed;
     SysCallList[0x30] = Exit;
-    //SysCallList[0x20] = GetInput;
+    SysCallList[0x20] = GetInput;
 
     //IDT::SetISR(0x80, 0, 0); // should disable the int
 

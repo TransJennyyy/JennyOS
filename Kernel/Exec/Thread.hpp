@@ -10,11 +10,9 @@ struct ThreadObject
 
     unsigned int StackPTR;
     unsigned int FirstStart;
-    unsigned char ThreadPaused; // set to 1 to pause a thread of ThreadWaitTime number LAPIC cycles
 
     void* ThreadCloseMsg;
 
-    unsigned char BgTask; // just if its closed do we open a command line
     
     unsigned int ThreadWaitTime; // this is the number of LAPIC ints untill it unpauses( to never happen leave as zero)
 
@@ -25,6 +23,11 @@ struct ThreadObject
     // 3 for waiting
     unsigned int ThreadParentIndex;
 };
+#define ThreadStateNormal 0
+#define ThreadStatePaused 1
+#define ThreadStateClosed 2
+#define ThreadStateWaiting 3
+#define ThreadStateRestarting 4
 
 class Thread
 {
@@ -36,3 +39,5 @@ class Thread
     void RunThread();
 };
 
+extern unsigned int NumberThreads;
+extern struct ThreadObject* ThreadArray;

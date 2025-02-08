@@ -5,12 +5,6 @@
 #include "../../Ps2/Ps2.hpp"
 #include "../RamDiskMgr.hpp"
 
-void OnInnerAppExit()
-{
-    Console::PrintString("Inner App Closed\n");
-
-}
-
 
 void CommandLoop()
 {
@@ -19,14 +13,19 @@ void CommandLoop()
     const char* TmpStr = "\n$";
     asm("int $0x80" :: "S"(0), "ebx"(TmpStr));
 
-    unsigned char IsDone;
-    Ps2::SetPs2InputBuffer((InputBuffer+1), 500, &IsDone);
-        
+    struct Ps2Input
+    {
+        void* Buffer;
+        unsigned int NumberBytes;
+    };
 
-        //Console::PrintInt((unsigned int)OnInnerAppExit, 1);
+    Ps2Input Ps2SyscallInput = 
+    {
+        &InputBuffer,
+        500
+    };
 
-
-    while(!IsDone);
+    asm("int $0x80" :: "S"(0x20), "ebx"(&Ps2SyscallInput));  
 
     unsigned int InputSize= 0;
     char* InputTmp = (InputBuffer+1);

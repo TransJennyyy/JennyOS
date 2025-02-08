@@ -20,7 +20,7 @@ void TaskList::Entry()
     asm("int $0x80" :: "S"(0), "ebx"(TableTop));
     for(int i=0; i< NumberThreads; i++) // for each thread we list, PID(i) | Core | Backup Core | NumberSyscalls Per Second
     {
-        if(!ThreadArray[i].ThreadPaused) { // dont show closed apps
+        if(!ThreadArray[i].ThreadState != 2) { // dont show closed apps
             Console::PrintInt(i, 0);
             asm("int $0x80" :: "S"(0), "ebx"(BetweenBar));
             Console::PrintInt(ThreadArray[i].CoreUsing, 0);
