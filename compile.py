@@ -103,7 +103,7 @@ def CompileCFile(path):
         system(f"wsl g++ {path} -fno-common -fno-strict-aliasing -m32 -ffreestanding -c -o {OutDir} -fno-pie -fno-builtin  ")
     else:
         OutDir = GetOutDirrectory(path, 'elf');
-        system(f"g++ {path} -fno-stack-protector -fno-strict-aliasing -fno-common -m32 -ffreestanding -c -o {OutDir} -fno-pie -fno-builtin -nostartfiles -nolibc -nodefaultlibs -nostdlib -nostdlib++ -mno-sse ")
+        system(f"g++ {path} -fno-stack-protector -fno-strict-aliasing -fno-common -m32 -ffreestanding -c -o {OutDir} -fno-pie -fno-builtin -nostartfiles -nolibc -nodefaultlibs -nostdlib  -mno-sse ") #-nostdlib++
     if not exists(GetOutDirrectory(path, 'elf')):
         print("Failed Compile")
         exit(1)
